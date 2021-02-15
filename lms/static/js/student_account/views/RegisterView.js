@@ -254,7 +254,11 @@
                         };
 
                     FormView.prototype.postRender.call(this);
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> 941d8f2722 (GN-265 Always show optional fields on registry.)
                     // NAU always show optional fields
                     /*$('.optional-fields').addClass('hidden');*/
                     $('#toggle_optional_fields').change(function() {
@@ -270,7 +274,7 @@
 
                     // NAU always hide checkbox to show/hide optional fields
                     /*if (!this.hasOptionalFields) {*/
-                    $('.checkbox-optional_fields_toggle').addClass('hidden');
+                        $('.checkbox-optional_fields_toggle').addClass('hidden');
                     /*}*/
                     // xss-lint: disable=javascript-jquery-insert-into-target
                     $('.checkbox-honor_code').insertAfter('.optional-fields');
