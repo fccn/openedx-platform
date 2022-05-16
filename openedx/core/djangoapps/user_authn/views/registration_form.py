@@ -442,9 +442,9 @@ class RegistrationFormFactory:
                         field_options = getattr(
                             getattr(custom_form, 'Meta', None), 'serialization_options', {}
                         ).get(field_name, {})
-                        field_type = field_options.get(
-                            'field_type',
-                            FormDescription.FIELD_TYPE_MAP.get(field.__class__))
+
+                        field_type = field_options.get('field_type',
+                                                       FormDescription.FIELD_TYPE_MAP.get(field.__class__))
                         if not field_type:
                             raise ImproperlyConfigured(
                                 "Field type '{}' not recognized for registration extension field '{}'.".format(
@@ -457,12 +457,10 @@ class RegistrationFormFactory:
                                 field_name,
                                 label=field.label,
                                 default=field_options.get('default'),
-                                field_type=field_options.get(
-                                    'field_type',
-                                    FormDescription.FIELD_TYPE_MAP.get(field.__class__)),
+                                field_type=field_options.get('field_type',
+                                                             FormDescription.FIELD_TYPE_MAP.get(field.__class__)),
                                 placeholder=field.initial,
                                 instructions=field.help_text,
-                                exposed=self._is_field_exposed(field_name),
                                 required=(self._is_field_required(field_name) or field.required),
                                 restrictions=restrictions,
                                 options=getattr(field, 'choices', None), error_messages=field.error_messages,
