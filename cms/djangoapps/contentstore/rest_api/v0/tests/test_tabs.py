@@ -46,6 +46,7 @@ class TabsAPITests(CourseTestCase):
         )
 
         # add a static tab to the course, for code coverage
+
         self.test_tab = BlockFactory.create(
             parent_location=self.course.location,
             category="static_tab",

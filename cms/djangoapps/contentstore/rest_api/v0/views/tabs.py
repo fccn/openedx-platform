@@ -99,6 +99,7 @@ class CourseTabListView(DeveloperErrorViewMixin, APIView):
         return Response(serializedCourseTabs)
 
 
+
 @view_auth_classes(is_authenticated=True)
 class CourseTabSettingsView(DeveloperErrorViewMixin, APIView):
     """

@@ -23,6 +23,7 @@ from common.djangoapps.util.json_request import JsonResponse, JsonResponseBadReq
 from ..toggles import use_new_custom_pages
 from ..utils import get_lms_link_for_item, get_pages_and_resources_url, get_custom_pages_url
 
+
 __all__ = ["tabs_handler", "update_tabs_handler"]
 
 User = get_user_model()
