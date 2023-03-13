@@ -868,6 +868,14 @@ class EnrollmentListView(APIView, ApiKeyPermissionMixIn):
 
             log.info("The user [%s] has already been enrolled in course run [%s].", username, course_id)
             return Response(response)
+        except InvalidEnrollmentAttribute as error:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={
+                    "message": str(error),
+                    "localizedMessage": str(error),
+                }
+            )
         except CourseModeNotFoundError as error:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
