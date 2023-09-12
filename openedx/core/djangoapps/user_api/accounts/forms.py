@@ -7,6 +7,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from openedx.core.djangoapps.user_api.accounts.utils import handle_retirement_cancellation
+from openedx.core.djangoapps.user_authn.utils import generate_password
 
 
 class RetirementQueueDeletionForm(forms.Form):
