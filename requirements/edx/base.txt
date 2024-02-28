@@ -335,9 +335,11 @@ django-pipeline==3.0.0
 django-ratelimit==4.1.0
     # via -r requirements/edx/kernel.in
 django-sekizai==4.1.0
-    # via
-    #   -r requirements/edx/kernel.in
-    #   openedx-django-wiki
+
+django-pyfs==3.2.0
+    # via -r requirements/edx/base.in
+django-require @ git+https://github.com/openedx/django-require.git@0c54adb167142383b26ea6b3edecc3211822a776
+    # via -r requirements/edx/github.in
 django-ses==4.0.0
     # via -r requirements/edx/bundled.in
 django-simple-history==3.4.0
