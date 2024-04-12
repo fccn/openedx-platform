@@ -283,6 +283,9 @@
                     // xss-lint: disable=javascript-jquery-insert-into-target
                     $('.checkbox-terms_of_service').insertAfter('.optional-fields');
 
+                    // NAU custom, move this to be the first after the optional fields
+                    $('.checkbox-data_authorization').insertAfter('.optional-fields');
+
                     // Clicking on links inside a label should open that link.
                     $('label a').click(function(ev) {
                         ev.stopPropagation();
