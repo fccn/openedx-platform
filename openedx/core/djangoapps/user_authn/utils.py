@@ -6,6 +6,7 @@ import hashlib
 import math
 import random
 import re
+import string
 from urllib.parse import urlparse  # pylint: disable=import-error
 from uuid import uuid4  # lint-amnesty, pylint: disable=unused-import
 
