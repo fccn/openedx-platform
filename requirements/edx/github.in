@@ -81,7 +81,7 @@
 # ... add dependencies here
 
 # original repo is not maintained any more.
-git+https://github.com/openedx/django-require.git@0c54adb167142383b26ea6b3edecc3211822a776#egg=django-require==1.0.12
+#git+https://github.com/openedx/django-require.git@0c54adb167142383b26ea6b3edecc3211822a776#egg=django-require==1.0.12
 
 ##############################################################################
 # Critical fixes for packages that are not yet available in a PyPI release.
