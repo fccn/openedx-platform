@@ -254,11 +254,6 @@
                         };
 
                     FormView.prototype.postRender.call(this);
-<<<<<<< HEAD
-
-=======
-
->>>>>>> 941d8f2722 (GN-265 Always show optional fields on registry.)
                     // NAU always show optional fields
                     /*$('.optional-fields').addClass('hidden');*/
                     $('#toggle_optional_fields').change(function() {
