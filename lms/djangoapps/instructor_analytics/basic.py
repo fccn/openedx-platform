@@ -171,11 +171,7 @@ def enrolled_students_features(course_key, features):  # lint-amnesty, pylint: d
     if include_team_column:
         enrollments = enrollments.prefetch_related('user__teams')
 
-
     students = [enrollment.user for enrollment in enrollments]
-
-    # student_features = [x for x in get_student_features_with_custom(course_key) if x in features]
-    # profile_features = [x for x in PROFILE_FEATURES if x in features]
 
     # pylint: disable=line-too-long
     global STUDENT_FEATURES_WITH_CUSTOM
