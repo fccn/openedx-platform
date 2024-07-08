@@ -199,7 +199,6 @@ def enrolled_students_features(course_key, features):  # lint-amnesty, pylint: d
 
         student = enrollment.user
 
-
         # For data extractions on the 'meta' field
         # the feature name should be in the format of 'meta.foo' where
         # 'foo' is the keyname in the meta dictionary
