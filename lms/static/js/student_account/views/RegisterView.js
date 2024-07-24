@@ -185,7 +185,7 @@
                     return this;
                 },
 
-                postRender: function() {
+            postRender: function() {
                     var inputs = this.$('.form-field'),
                         inputSelectors = 'input, select, textarea',
                         inputTipSelectors = ['tip error', 'tip tip-input'],
@@ -254,6 +254,7 @@
                         };
 
                     FormView.prototype.postRender.call(this);
+
                     // NAU always show optional fields
                     /*$('.optional-fields').addClass('hidden');*/
                     $('#toggle_optional_fields').change(function() {
@@ -314,124 +315,6 @@
                 }
 
                 return this;
-            },
-
-            postRender: function() {
-                var inputs = this.$('.form-field'),
-                    inputSelectors = 'input, select, textarea',
-                    inputTipSelectors = ['tip error', 'tip tip-input'],
-                    inputTipSelectorsHidden = ['tip error hidden', 'tip tip-input hidden'],
-                    onInputFocus = function() {
-                        // Apply on focus styles to input
-                        $(this).find('label').addClass('focus-in')
-                            .removeClass('focus-out');
-
-                        // Show each input tip
-                        $(this).children().each(function() {
-                            if (inputTipSelectorsHidden.indexOf($(this).attr('class')) >= 0) {
-                                $(this).removeClass('hidden');
-                            }
-                        });
-                    },
-                    onInputFocusOut = function() {
-                        // If input has no text apply focus out styles
-                        if ($(this).find(inputSelectors).val().length === 0) {
-                            $(this).find('label').addClass('focus-out')
-                                .removeClass('focus-in');
-                        }
-
-                        // Hide each input tip
-                        $(this).children().each(function() {
-                            // This is a 1 instead of 0 so the error message for a field is not
-                            // hidden on blur and only the help tip is hidden.
-                            if (inputTipSelectors.indexOf($(this).attr('class')) >= 1) {
-                                $(this).addClass('hidden');
-                            }
-                        });
-                    },
-                    handleInputBehavior = function(input) {
-                        // Initially put label in input
-                        if (input.find(inputSelectors).val().length === 0) {
-                            input.find('label').addClass('focus-out')
-                                .removeClass('focus-in');
-                        }
-
-                        // Initially hide each input tip
-                        input.children().each(function() {
-                            if (inputTipSelectors.indexOf($(this).attr('class')) >= 0) {
-                                $(this).addClass('hidden');
-                            }
-                        });
-
-                        input.focusin(onInputFocus);
-                        input.focusout(onInputFocusOut);
-                    },
-                    handleAutocomplete = function() {
-                        $(inputs).each(function() {
-                            var $input = $(this),
-                                isCheckbox = $input.attr('class').indexOf('checkbox') !== -1;
-
-                            if (!isCheckbox) {
-                                if ($input.find(inputSelectors).val().length === 0
-                                        && !$input.is(':-webkit-autofill')) {
-                                    $input.find('label').addClass('focus-out')
-                                        .removeClass('focus-in');
-                                } else {
-                                    $input.find('label').addClass('focus-in')
-                                        .removeClass('focus-out');
-                                }
-                            }
-                        });
-                    };
-
-                FormView.prototype.postRender.call(this);
-                $('.optional-fields').addClass('hidden');
-                $('#toggle_optional_fields').change(function() {
-                    window.analytics.track('edx.bi.user.register.optional_fields_selected');
-                    $('.optional-fields').toggleClass('hidden');
-                });
-
-                // Since the honor TOS text has a composed css selector, it is more future proof
-                // to insert the not toggled optional fields before .honor_tos_combined's parent
-                // that is the container for the honor TOS text and checkbox.
-                // xss-lint: disable=javascript-jquery-insert-into-target
-                $('.exposed-optional-fields').insertBefore(
-                    $('.honor_tos_combined').parent()
-                );
-
-                // We are swapping the order of these elements here because the honor code agreement
-                // is a required checkbox field and the optional fields toggle is a cosmetic
-                // improvement so that we don't have to show all the optional fields.
-                // xss-lint: disable=javascript-jquery-insert-into-target
-                $('.checkbox-optional_fields_toggle').insertAfter('.required-fields');
-                if (!this.hasOptionalFields) {
-                    $('.checkbox-optional_fields_toggle').addClass('hidden');
-                }
-                // xss-lint: disable=javascript-jquery-insert-into-target
-                $('.checkbox-honor_code').insertAfter('.optional-fields');
-                // xss-lint: disable=javascript-jquery-insert-into-target
-                $('.checkbox-terms_of_service').insertAfter('.optional-fields');
-
-                // Clicking on links inside a label should open that link.
-                $('label a').click(function(ev) {
-                    ev.stopPropagation();
-                    ev.preventDefault();
-                    window.open($(this).attr('href'), $(this).attr('target'), 'noopener');
-                });
-                $('.form-field').each(function() {
-                    $(this).find('option:first').html('');
-                });
-                $(inputs).each(function() {
-                    var $input = $(this),
-                        isCheckbox = $input.attr('class').indexOf('checkbox') !== -1;
-                    if ($input.length > 0 && !isCheckbox) {
-                        handleInputBehavior($input);
-                    }
-                });
-                $('#register-confirm_email').bind('cut copy paste', function(e) {
-                    e.preventDefault();
-                });
-                setTimeout(handleAutocomplete, 1000);
             },
 
             hideRequiredMessageExceptOnError: function($el) {
