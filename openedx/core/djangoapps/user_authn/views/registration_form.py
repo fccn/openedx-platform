@@ -426,7 +426,7 @@ class RegistrationFormFactory:
         Returns:
             HttpResponse
         """
-        form_desc = FormDescription("post", reverse("user_api_registration"))
+        form_desc = FormDescription("post", self._get_registration_submit_url(request))
         self._apply_third_party_auth_overrides(request, form_desc)
 
         # Custom form fields can be added via the form set in settings.REGISTRATION_EXTENSION_FORM
@@ -461,7 +461,7 @@ class RegistrationFormFactory:
                                                        FormDescription.FIELD_TYPE_MAP.get(field.__class__))
                         if not field_type:
                             raise ImproperlyConfigured(
-                                u"Field type '{}' not recognized for registration extension field '{}'.".format(
+                                "Field type '{}' not recognized for registration extension field '{}'.".format(
 
                                     field_type,
                                     field_name
@@ -475,12 +475,19 @@ class RegistrationFormFactory:
                                                              FormDescription.FIELD_TYPE_MAP.get(field.__class__)),
                                 placeholder=field.initial,
                                 instructions=field.help_text,
+                                exposed=self._is_field_exposed(field_name),
                                 required=(self._is_field_required(field_name) or field.required),
                                 restrictions=restrictions,
                                 options=getattr(field, 'choices', None), error_messages=field.error_messages,
                                 include_default_option=field_options.get('include_default_option'),
                             )
 
+        # remove confirm_email form v1 registration form
+        if is_api_v1(request):
+            for index, field in enumerate(form_desc.fields):
+                if field['name'] == 'confirm_email':
+                    del form_desc.fields[index]
+                    break
         return form_desc
 
     def _get_registration_submit_url(self, request):
