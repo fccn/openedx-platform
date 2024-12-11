@@ -299,14 +299,24 @@
                             persistChanges: true
                         })
                     });
+                } else if (fieldItem.field_type === 'ListField') {
+                    additionalFields.fields.push({
+                        view: new AccountSettingsFieldViews.ExtendedFieldListFieldView({
+                            model: userAccountModel,
+                            title: fieldItem.field_label,
+                            fieldName: fieldItem.field_name,
+                            options: fieldItem.field_options,
+                            valueAttribute: 'extended_profile',
+                            persistChanges: true
+                        })
+                    });
                 } else {
-                    if (fieldItem.field_type === 'ListField') {
+                    if (fieldItem.field_type === 'CheckboxField') {
                         additionalFields.fields.push({
-                            view: new AccountSettingsFieldViews.ExtendedFieldListFieldView({
+                            view: new AccountSettingsFieldViews.ExtendedFieldCheckboxFieldView({
                                 model: userAccountModel,
                                 title: fieldItem.field_label,
                                 fieldName: fieldItem.field_name,
-                                options: fieldItem.field_options,
                                 valueAttribute: 'extended_profile',
                                 persistChanges: true
                             })
