@@ -1,6 +1,6 @@
-<div class="u-field-value field">
-    <label class="u-field-title field-label" for="field-input-<%- id %>"><%- title %></label>
-    <input class="field-input input-checkbox" type="checkbox"
+<div class="u-field-value field" style="display: flex;flex-direction: row-reverse;align-items: center;justify-content: flex-end;gap:1em;">
+    <label class="u-field-title field-label" for="field-input-<%- id %>" style="margin:0;"><%= title %></label>
+    <input class="field-input input-checkbox" type="checkbox" style="min-width:25px;"
            id="field-input-<%- id %>"
            title="Checkbox field for <%- id %>"
            aria-describedby="u-field-message-help-<%- id %>"
