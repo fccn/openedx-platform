@@ -346,57 +346,57 @@
                 fieldTemplate: field_checkbox_account_template,
 
                 events: {
-					'change input': 'saveValue'
-				},
+                    'change input': 'saveValue'
+                },
 
-				initialize: function(options) {
-					this._super(options);
-					_.bindAll(this, 'render', 'fieldValue', 'updateValueInField', 'saveValue');
-					this.listenTo(this.model, 'change:' + this.options.valueAttribute, this.updateValueInField);
-				},
+                initialize: function(options) {
+                    this._super(options);
+                    _.bindAll(this, 'render', 'fieldValue', 'updateValueInField', 'saveValue');
+                    this.listenTo(this.model, 'change:' + this.options.valueAttribute, this.updateValueInField);
+                },
 
-				render: function () {
-					HtmlUtils.setHtml(this.$el, HtmlUtils.template(field_checkbox_account_template)({
-						id: this.options.valueAttribute + '_' + this.options.fieldName,
-						title: this.options.title,
-						value: this.modelValue(),
-						message: this.options.helpMessage
-					}));
-					this.delegateEvents();
-					return this;
-				},
+                render: function () {
+                    HtmlUtils.setHtml(this.$el, HtmlUtils.template(field_checkbox_account_template)({
+                        id: this.options.valueAttribute + '_' + this.options.fieldName,
+                        title: this.options.title,
+                        value: this.modelValue(),
+                        message: this.options.helpMessage
+                    }));
+                    this.delegateEvents();
+                    return this;
+                },
 
-				modelValue: function () {
-					var extendedProfileFields = this.model.get(this.options.valueAttribute);
-					for (var i = 0; i < extendedProfileFields.length; i++) { // eslint-disable-line vars-on-top
-						if (extendedProfileFields[i].field_name === this.options.fieldName) {
-							return extendedProfileFields[i].field_value;
-						}
-					}
-					return null;
-				},
+                modelValue: function () {
+                    var extendedProfileFields = this.model.get(this.options.valueAttribute);
+                    for (var i = 0; i < extendedProfileFields.length; i++) { // eslint-disable-line vars-on-top
+                        if (extendedProfileFields[i].field_name === this.options.fieldName) {
+                            return extendedProfileFields[i].field_value;
+                        }
+                    }
+                    return null;
+                },
 
-				fieldValue: function() {
-					return this.$('.u-field-value input').is(':checked');
-				},
+                fieldValue: function() {
+                    return this.$('.u-field-value input').is(':checked');
+                },
 
-				updateValueInField: function() {
-					const checked = this.modelValue() === true;
-					this.$('.u-field-value input').prop('checked', checked);
-				},
+                updateValueInField: function() {
+                    const checked = this.modelValue() === true;
+                    this.$('.u-field-value input').prop('checked', checked);
+                },
 
-				saveValue: function () {
-					let attributes = {}, value;
+                saveValue: function () {
+                    let attributes = {}, value;
 
-					if (this.persistChanges === true) {
-						value = [{
-							field_name: this.options.fieldName,
-							field_value: !!this.fieldValue()
-						}];
-						attributes[this.options.valueAttribute] = value;
-						this.saveAttributes(attributes);
-					}
-				}
+                    if (this.persistChanges === true) {
+                        value = [{
+                            field_name: this.options.fieldName,
+                            field_value: !!this.fieldValue()
+                        }];
+                        attributes[this.options.valueAttribute] = value;
+                        this.saveAttributes(attributes);
+                    }
+                }
             }),
             AuthFieldView: FieldViews.LinkFieldView.extend({
                 fieldTemplate: field_social_link_template,
