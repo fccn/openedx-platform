@@ -1436,7 +1436,7 @@ def get_students_features(request, course_id, csv=False):  # pylint: disable=red
             'last_login', 'date_joined', 'external_user_key',
             'enrollment_date'
         ]
-    keep_field_private(query_features, 'year_of_birth')  # protected information
+    # keep_field_private(query_features, 'year_of_birth')  # protected information
 
     # Provide human-friendly and translatable names for these features. These names
     # will be displayed in the table generated in data_download.js. It is not (yet)
@@ -1448,7 +1448,7 @@ def get_students_features(request, course_id, csv=False):  # pylint: disable=red
         'email': _('Email'),
         'language': _('Language'),
         'location': _('Location'),
-        #  'year_of_birth': _('Birth Year'),  treated as privileged information as of TNL-10683, not to go in reports
+        'year_of_birth': _('Birth Year'),  # treated as privileged information as of TNL-10683, not to go in reports
         'gender': _('Gender'),
         'level_of_education': _('Level of Education'),
         'mailing_address': _('Mailing Address'),
