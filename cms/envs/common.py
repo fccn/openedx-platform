@@ -829,6 +829,8 @@ LMS_BASE = 'localhost:18000'
 LMS_ROOT_URL = "https://localhost:18000"
 LMS_INTERNAL_ROOT_URL = LMS_ROOT_URL
 
+GAMMA_SETTINGS_URL = "http://0.0.0.0:9700/gamma/badges/"
+
 # Use LMS SSO for login, once enabled by setting LOGIN_URL (see docs/guides/studio_oauth.rst)
 SOCIAL_AUTH_STRATEGY = 'auth_backends.strategies.EdxDjangoStrategy'
 LOGIN_REDIRECT_URL = EDX_ROOT_URL + '/home/'
