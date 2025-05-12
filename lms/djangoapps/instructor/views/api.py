@@ -1485,40 +1485,45 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
         # We need to clone the list because we modify it below
         query_features = list(configuration_helpers.get_value('student_profile_download_fields', []))
 
-        if not query_features:
-            query_features = [
-                'id', 'username', 'name', 'email', 'language', 'location',
-                'year_of_birth', 'gender', 'level_of_education', 'mailing_address',
-                'goals', 'enrollment_mode', 'last_login', 'date_joined', 'external_user_key'
-            ]
-        keep_field_private(query_features, 'year_of_birth')  # protected information
+    if not query_features:
+        query_features = [
+            'id', 'username', 'name', 'email', 'language', 'location',
+            'year_of_birth', 'gender', 'level_of_education', 'mailing_address',
+            'goals', 'enrollment_mode', 'verification_status',
+            'last_login', 'date_joined', 'external_user_key',
+            'enrollment_date'
+        ]
 
-        # Provide human-friendly and translatable names for these features. These names
-        # will be displayed in the table generated in data_download.js. It is not (yet)
-        # used as the header row in the CSV, but could be in the future.
-        query_features_names = {
-            'id': _('User ID'),
-            'username': _('Username'),
-            'name': _('Name'),
-            'email': _('Email'),
-            'language': _('Language'),
-            'location': _('Location'),
-            #  'year_of_birth': _('Birth Year'),  treated as privileged information as of TNL-10683,
-            #  not to go in reports
-            'gender': _('Gender'),
-            'level_of_education': _('Level of Education'),
-            'mailing_address': _('Mailing Address'),
-            'goals': _('Goals'),
-            'enrollment_mode': _('Enrollment Mode'),
-            'last_login': _('Last Login'),
-            'date_joined': _('Date Joined'),
-            'external_user_key': _('External User Key'),
-        }
+    # Provide human-friendly and translatable names for these features. These names
+    # will be displayed in the table generated in data_download.js. It is not (yet)
+    # used as the header row in the CSV, but could be in the future.
+    query_features_names = {
+        'id': _('User ID'),
+        'username': _('Username'),
+        'name': _('Name'),
+        'email': _('Email'),
+        'language': _('Language'),
+        'location': _('Location'),
+        'year_of_birth': _('Birth Year'),
+        'gender': _('Gender'),
+        'level_of_education': _('Level of Education'),
+        'mailing_address': _('Mailing Address'),
+        'goals': _('Goals'),
+        'enrollment_mode': _('Enrollment Mode'),
+        'last_login': _('Last Login'),
+        'date_joined': _('Date Joined'),
+        'external_user_key': _('External User Key'),
+        'enrollment_date': _('Enrollment Date'),
+    }
 
-        if is_course_cohorted(course.id):
-            # Translators: 'Cohort' refers to a group of students within a course.
-            query_features.append('cohort')
-            query_features_names['cohort'] = _('Cohort')
+    if not settings.FEATURES.get('SHOW_PRIVATE_FIELDS_IN_PROFILE_INFORMATION_REPORT', False):
+            keep_field_private(query_features, 'year_of_birth')
+            query_features_names.pop('year_of_birth', None)
+
+    if is_course_cohorted(course.id):
+        # Translators: 'Cohort' refers to a group of students within a course.
+        query_features.append('cohort')
+        query_features_names['cohort'] = _('Cohort')
 
         if course.teams_enabled:
             query_features.append('team')
