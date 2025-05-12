@@ -1436,7 +1436,6 @@ def get_students_features(request, course_id, csv=False):  # pylint: disable=red
             'last_login', 'date_joined', 'external_user_key',
             'enrollment_date'
         ]
-    # keep_field_private(query_features, 'year_of_birth')  # protected information
 
     # Provide human-friendly and translatable names for these features. These names
     # will be displayed in the table generated in data_download.js. It is not (yet)
@@ -1448,7 +1447,7 @@ def get_students_features(request, course_id, csv=False):  # pylint: disable=red
         'email': _('Email'),
         'language': _('Language'),
         'location': _('Location'),
-        'year_of_birth': _('Birth Year'),  # treated as privileged information as of TNL-10683, not to go in reports
+        'year_of_birth': _('Birth Year'),
         'gender': _('Gender'),
         'level_of_education': _('Level of Education'),
         'mailing_address': _('Mailing Address'),
@@ -1459,6 +1458,10 @@ def get_students_features(request, course_id, csv=False):  # pylint: disable=red
         'external_user_key': _('External User Key'),
         'enrollment_date': _('Enrollment Date'),
     }
+
+    if not settings.FEATURES.get('SHOW_PRIVATE_FIELDS_IN_PROFILE_INFORMATION_REPORT', False):
+            keep_field_private(query_features, 'year_of_birth')
+            query_features_names.pop('year_of_birth', None)
 
     if is_course_cohorted(course.id):
         # Translators: 'Cohort' refers to a group of students within a course.
