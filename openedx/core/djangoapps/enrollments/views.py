@@ -27,7 +27,7 @@ from rest_framework.views import APIView  # lint-amnesty, pylint: disable=wrong-
 
 from common.djangoapps.course_modes.models import CourseMode
 from common.djangoapps.student.auth import user_has_role
-from common.djangoapps.student.models import CourseEnrollment, CourseEnrollmentAllowed, User
+from common.djangoapps.student.models import CourseEnrollment, CourseEnrollmentAllowed, EnrollmentNotAllowed, User
 from common.djangoapps.student.roles import CourseStaffRole, GlobalStaff
 from common.djangoapps.util.disable_rate_limit import can_disable_rate_limit
 from openedx.core.djangoapps.cors_csrf.authentication import SessionAuthenticationCrossDomainCsrf
@@ -36,7 +36,10 @@ from openedx.core.djangoapps.course_groups.cohorts import CourseUserGroup, add_u
 from openedx.core.djangoapps.embargo import api as embargo_api
 from openedx.core.djangoapps.enrollments import api
 from openedx.core.djangoapps.enrollments.errors import (
-    CourseEnrollmentError, CourseEnrollmentExistsError, CourseModeNotFoundError, InvalidEnrollmentAttribute,
+    CourseEnrollmentError,
+    CourseEnrollmentExistsError,
+    CourseModeNotFoundError,
+    InvalidEnrollmentAttribute,
 )
 from openedx.core.djangoapps.enrollments.forms import CourseEnrollmentsApiListForm
 from openedx.core.djangoapps.enrollments.paginators import CourseEnrollmentsApiListPagination
@@ -868,6 +871,14 @@ class EnrollmentListView(APIView, ApiKeyPermissionMixIn):
                     "localizedMessage": str(error),
                 }
             )
+        except EnrollmentNotAllowed as error:
+            return Response(
+                status=status.HTTP_403_FORBIDDEN,
+                data={
+                    "message": str(error),
+                    "localizedMessage": str(error),
+                }
+            )
         except CourseModeNotFoundError as error:
             return Response(
                 status=status.HTTP_400_BAD_REQUEST,
@@ -899,6 +910,7 @@ class EnrollmentListView(APIView, ApiKeyPermissionMixIn):
                     ).format(username=username, course_id=course_id)
                 }
             )
+
         except CourseUserGroup.DoesNotExist:
             log.exception('Missing cohort [%s] in course run [%s]', cohort_name, course_id)
             return Response(
