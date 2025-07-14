@@ -121,6 +121,10 @@ from lms.envs.common import (
     # Methods to derive settings
     _make_mako_template_dirs,
     _make_locale_paths,
+
+    # Password Validator Settings
+    AUTH_PASSWORD_VALIDATORS,
+
 )
 from path import Path as path
 from django.urls import reverse_lazy
