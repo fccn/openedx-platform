@@ -10,7 +10,6 @@ not migrating so as not to inconvenience users by logging them all out.
 from functools import wraps
 from urllib.parse import urlencode
 
-from django.conf import settings
 from django.core import cache
 # If we can't find a 'general' CACHE defined in settings.py, we simply fall back
 # to returning the default cache. This will happen with dev machines.
@@ -55,8 +54,7 @@ def cache_if_anonymous(*get_parameters):
             # If that page is cached the authentication doesn't
             # happen, so we disable the cache when that feature is enabled.
             if (
-                not request.user.is_authenticated and
-                settings.FEATURES.get('ENABLE_CACHE_IF_ANONYMOUS', True)
+                not request.user.is_authenticated
             ):
                 # Use the cache. The same view accessed through different domain names may
                 # return different things, so include the domain name in the key.
