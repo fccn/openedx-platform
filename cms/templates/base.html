@@ -18,7 +18,6 @@ from openedx.core.djangolib.js_utils import (
 )
 from openedx.core.djangolib.markup import HTML
 from openedx.core.release import RELEASE_LINE
-from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 %>
 
 <%page expression_filter="h"/>
@@ -68,12 +67,6 @@ from openedx.core.djangoapps.site_configuration import helpers as configuration_
     % endif
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="path_prefix" content="${EDX_ROOT_URL}">
-    <%block name="header_meta"></%block>
-    <% educast_site_id = configuration_helpers.get_value('EDUCAST_SITE_ID', '')%>
-    % if user.is_authenticated and educast_site_id:
-    <meta name="integration" content="${educast_site_id}">
-    % endif
-
     <% favicon_url = branding_api.get_favicon_url() %>
     <link rel="icon" type="image/x-icon" href="${favicon_url}"/>
     <%static:css group='style-vendor'/>
