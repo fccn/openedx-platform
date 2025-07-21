@@ -50,7 +50,6 @@ from lms.djangoapps.certificates.utils import (
 from openedx.core.djangoapps.catalog.api import get_course_run_details
 from openedx.core.djangoapps.content.course_overviews.api import get_course_overview_or_none
 from openedx.core.djangoapps.lang_pref.api import get_closest_released_language
-from openedx.core.djangoapps.plugins.plugin_extension_points import run_extension_point
 from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.lib.courses import course_image_url
 from openedx.core.lib.courses import get_course_by_id
@@ -584,18 +583,6 @@ def render_html_view(request, course_id, certificate=None):  # pylint: disable=t
         # Add certificate header/footer data to current context
         context.update(get_certificate_header_context(is_secure=request.is_secure()))
         context.update(get_certificate_footer_context())
-
-        # Append/Override the existing view context values with plugin defined values
-        run_extension_point(
-            'NAU_CERTIFICATE_CONTEXT_EXTENSION',
-            context=context,
-            request=request,
-            course=course,
-            user=user,
-            user_certificate=user_certificate,
-            configuration=configuration,
-            certificate_language=certificate_language,
-        )
 
         # NAU Customization so the filter know which certificate is being rendered
         context['user_certificate'] = user_certificate
