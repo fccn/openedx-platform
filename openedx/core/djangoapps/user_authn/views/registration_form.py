@@ -6,6 +6,7 @@ import copy
 from importlib import import_module
 from eventtracking import tracker
 import re
+import logging
 
 from django import forms
 from django.conf import settings
@@ -16,6 +17,8 @@ from django.forms import widgets
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django_countries import countries
+from django.db.models import Model
+from typing import Optional, Type
 
 from common.djangoapps import third_party_auth
 from common.djangoapps.edxmako.shortcuts import marketing_link
@@ -36,6 +39,8 @@ from common.djangoapps.util.password_policy_validators import (
     password_validators_restrictions,
     validate_password,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class TrueCheckbox(widgets.CheckboxInput):
@@ -310,6 +315,34 @@ def get_registration_extension_form(*args, **kwargs):
     module, klass = settings.REGISTRATION_EXTENSION_FORM.rsplit('.', 1)
     module = import_module(module)
     return getattr(module, klass)(*args, **kwargs)
+
+
+def get_extended_profile_model() -> Optional[Type[Model]]:
+    """
+    Get the model class for the extended profile form.
+
+    Returns the Django model class associated with the form specified in
+    the `REGISTRATION_EXTENSION_FORM` setting.
+
+    Returns:
+        Optional[Type[Model]]: The model class if found and valid, None otherwise.
+
+    Example:
+        # In settings.py: REGISTRATION_EXTENSION_FORM = 'myapp.forms.ExtendedForm'
+        model_class = get_extended_profile_model()
+    """
+    setting_value = getattr(settings, "REGISTRATION_EXTENSION_FORM", None)
+    if not setting_value:
+        return None
+
+    try:
+        module_path, klass_name = setting_value.rsplit(".", 1)
+        module = import_module(module_path)
+        form_class = getattr(module, klass_name)
+        return getattr(form_class.Meta, "model", None)
+    except (ValueError, ImportError, ModuleNotFoundError, AttributeError) as e:
+        logger.warning("Could not load extended profile model from '%s': %s", setting_value, e)
+        return None
 
 
 class RegistrationFormFactory:
