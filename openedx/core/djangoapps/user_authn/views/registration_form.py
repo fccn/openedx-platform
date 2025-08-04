@@ -1182,10 +1182,3 @@ class RegistrationFormFactory:
                         default=current_provider.name if current_provider.name else "Third Party",
                         required=False,
                     )
-
-            run_extension_point(
-                'NAU_APPLY_SAML_OVERRIDES',
-                request=request,
-                form_desc=form_desc,
-                extra_settings=self._extra_fields_setting,
-            )
