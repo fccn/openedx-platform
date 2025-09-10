@@ -585,6 +585,21 @@ def render_html_view(request, course_id, certificate=None):  # pylint: disable=t
         context.update(get_certificate_header_context(is_secure=request.is_secure()))
         context.update(get_certificate_footer_context())
 
+        # Append/Override the existing view context values with plugin defined values
+        run_extension_point(
+            'NAU_CERTIFICATE_CONTEXT_EXTENSION',
+            context=context,
+            request=request,
+            course=course,
+            user=user,
+            user_certificate=user_certificate,
+            configuration=configuration,
+            certificate_language=certificate_language,
+        )
+
+        # NAU Customization so the filter know which certificate is being rendered
+        context['user_certificate'] = user_certificate
+
         # Append/Override the existing view context values with any course-specific static values from Advanced Settings
         context.update(course.cert_html_view_overrides)
 
