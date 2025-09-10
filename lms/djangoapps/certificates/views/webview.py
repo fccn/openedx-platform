@@ -597,6 +597,9 @@ def render_html_view(request, course_id, certificate=None):  # pylint: disable=t
             certificate_language=certificate_language,
         )
 
+        # NAU Customization so the filter know which certificate is being rendered
+        context['user_certificate'] = user_certificate
+
         # Append/Override the existing view context values with any course-specific static values from Advanced Settings
         context.update(course.cert_html_view_overrides)
 
