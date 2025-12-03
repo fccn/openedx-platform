@@ -1473,7 +1473,7 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
         course_key = CourseKey.from_string(course_id)
         course = get_course_by_id(course_key)
         report_type = _('enrolled learner profile')
-        available_features = instructor_analytics_basic.AVAILABLE_FEATURES
+        available_features = instructor_analytics_basic.get_available_features(course_key)
 
         # Allow for sites to be able to define additional columns.
         # Note that adding additional columns has the potential to break
@@ -1485,67 +1485,103 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
         # We need to clone the list because we modify it below
         query_features = list(configuration_helpers.get_value('student_profile_download_fields', []))
 
-    if not query_features:
-        query_features = [
-            'id', 'username', 'name', 'email', 'language', 'location',
-            'year_of_birth', 'gender', 'level_of_education', 'mailing_address',
-            'goals', 'enrollment_mode', 'verification_status',
-            'last_login', 'date_joined', 'external_user_key',
-            'enrollment_date'
-        ]
+        if not query_features:
+            query_features = [
+                'id', 'username', 'name', 'email', 'language', 'location',
+                'year_of_birth', 'gender', 'level_of_education', 'mailing_address',
+                'goals', 'enrollment_mode', 'last_login', 'date_joined', 'external_user_key',
+                'enrollment_date',
+            ]
 
-    # Provide human-friendly and translatable names for these features. These names
-    # will be displayed in the table generated in data_download.js. It is not (yet)
-    # used as the header row in the CSV, but could be in the future.
-    query_features_names = {
-        'id': _('User ID'),
-        'username': _('Username'),
-        'name': _('Name'),
-        'email': _('Email'),
-        'language': _('Language'),
-        'location': _('Location'),
-        'year_of_birth': _('Birth Year'),
-        'gender': _('Gender'),
-        'level_of_education': _('Level of Education'),
-        'mailing_address': _('Mailing Address'),
-        'goals': _('Goals'),
-        'enrollment_mode': _('Enrollment Mode'),
-        'last_login': _('Last Login'),
-        'date_joined': _('Date Joined'),
-        'external_user_key': _('External User Key'),
-        'enrollment_date': _('Enrollment Date'),
-    }
+        additional_attributes = configuration_helpers.get_value_for_org(
+            course_key.org,
+            "additional_student_profile_attributes"
+        )
+        if additional_attributes:
+            # Fail fast: must be list/tuple of strings.
+            if not isinstance(additional_attributes, (list, tuple)):
+                return JsonResponseBadRequest(
+                    _('Invalid additional student attribute configuration: expected list of strings, got {type}.')
+                    .format(type=type(additional_attributes).__name__)
+                )
+            if not all(isinstance(v, str) for v in additional_attributes):
+                return JsonResponseBadRequest(
+                    _('Invalid additional student attribute configuration: all entries must be strings.')
+                )
+            # Reject empty string entries explicitly.
+            if any(v == '' for v in additional_attributes):
+                return JsonResponseBadRequest(
+                    _('Invalid additional student attribute configuration: empty attribute names are not allowed.')
+                )
+            # Validate each attribute is in available_features; allow duplicates as provided.
+            invalid = [v for v in additional_attributes if v not in available_features]
+            if invalid:
+                return JsonResponseBadRequest(
+                    _('Invalid additional student attributes: {attrs}').format(
+                        attrs=', '.join(invalid)
+                    )
+                )
+            query_features.extend(additional_attributes)
 
-    if not settings.FEATURES.get('SHOW_PRIVATE_FIELDS_IN_PROFILE_INFORMATION_REPORT', False):
-            keep_field_private(query_features, 'year_of_birth')
-            query_features_names.pop('year_of_birth', None)
+        # Provide human-friendly and translatable names for these features. These names
+        # will be displayed in the table generated in data_download.js. It is not (yet)
+        # used as the header row in the CSV, but could be in the future.
+        query_features_names = {
+            'id': _('User ID'),
+            'username': _('Username'),
+            'name': _('Name'),
+            'email': _('Email'),
+            'language': _('Language'),
+            'location': _('Location'),
+            'year_of_birth': _('Birth Year'),
+            'gender': _('Gender'),
+            'level_of_education': _('Level of Education'),
+            'mailing_address': _('Mailing Address'),
+            'goals': _('Goals'),
+            'enrollment_mode': _('Enrollment Mode'),
+            'last_login': _('Last Login'),
+            'date_joined': _('Date Joined'),
+            'external_user_key': _('External User Key'),
+            'enrollment_date': _('Enrollment Date'),
+        }
 
-    if is_course_cohorted(course.id):
-        # Translators: 'Cohort' refers to a group of students within a course.
-        query_features.append('cohort')
-        query_features_names['cohort'] = _('Cohort')
+        if additional_attributes:
+            for attr in additional_attributes:
+                if attr not in query_features_names:
+                    formatted_name = attr.replace('_', ' ').title()
+                    # pylint: disable-next=translation-of-non-string
+                    query_features_names[attr] = _(formatted_name)
 
-        if course.teams_enabled:
-            query_features.append('team')
-            query_features_names['team'] = _('Team')
+        for field in settings.PROFILE_INFORMATION_REPORT_PRIVATE_FIELDS:
+            keep_field_private(query_features, field)
+            query_features_names.pop(field, None)
 
-        # For compatibility reasons, city and country should always appear last.
-        query_features.append('city')
-        query_features_names['city'] = _('City')
-        query_features.append('country')
-        query_features_names['country'] = _('Country')
+        if is_course_cohorted(course.id):
+            # Translators: 'Cohort' refers to a group of students within a course.
+            query_features.append('cohort')
+            query_features_names['cohort'] = _('Cohort')
 
-        if not csv:
-            student_data = instructor_analytics_basic.enrolled_students_features(course_key, query_features)
-            response_payload = {
-                'course_id': str(course_key),
-                'students': student_data,
-                'students_count': len(student_data),
-                'queried_features': query_features,
-                'feature_names': query_features_names,
-                'available_features': available_features,
-            }
-            return JsonResponse(response_payload)
+            if course.teams_enabled:
+                query_features.append('team')
+                query_features_names['team'] = _('Team')
+
+            # For compatibility reasons, city and country should always appear last.
+            query_features.append('city')
+            query_features_names['city'] = _('City')
+            query_features.append('country')
+            query_features_names['country'] = _('Country')
+
+            if not csv:
+                student_data = instructor_analytics_basic.enrolled_students_features(course_key, query_features)
+                response_payload = {
+                    'course_id': str(course_key),
+                    'students': student_data,
+                    'students_count': len(student_data),
+                    'queried_features': query_features,
+                    'feature_names': query_features_names,
+                    'available_features': available_features,
+                }
+                return JsonResponse(response_payload)
 
         else:
             try:
