@@ -17,6 +17,7 @@ from django.utils import translation
 from django.utils.encoding import smart_str
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
+from openedx.core.djangoapps.plugins.plugin_extension_points import run_extension_point
 from openedx_filters.learning.filters import CertificateRenderStarted
 from organizations import api as organizations_api
 from edx_django_utils.plugins import pluggable_override
