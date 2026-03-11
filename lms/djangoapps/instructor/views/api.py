@@ -1459,10 +1459,7 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
                 'enrollment_date',
             ]
 
-        additional_attributes = configuration_helpers.get_value_for_org(
-            course_key.org,
-            "additional_student_profile_attributes"
-        )
+        additional_attributes = instructor_analytics_basic.get_additional_student_profile_attributes(course_key)
         if additional_attributes:
             # Fail fast: must be list/tuple of strings.
             if not isinstance(additional_attributes, (list, tuple)):
