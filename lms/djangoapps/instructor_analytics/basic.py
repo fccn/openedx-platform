@@ -141,15 +141,33 @@ def get_student_features_with_custom(course_key):
     Returns:
         tuple: Combined tuple of standard STUDENT_FEATURES and custom attributes
     """
-    additional_attributes = configuration_helpers.get_value_for_org(
-        course_key.org,
-        "additional_student_profile_attributes"
-    )
+    additional_attributes = get_additional_student_profile_attributes(course_key)
 
     if additional_attributes:
         return STUDENT_FEATURES + tuple(additional_attributes)
 
     return STUDENT_FEATURES
+
+
+def get_additional_student_profile_attributes(course_key):
+    """
+    Return list of additional student profile attributes configured for the course organization.
+
+    This function retrieves any custom student profile attributes that have been configured for
+    a specific course organization. These attributes can be used to extend the standard set of
+    student features included in analytics exports.
+
+    Args:
+        course_key: CourseKey object for the course
+
+    Returns:
+        list: List of additional student profile attributes configured for the course organization
+    """
+    return configuration_helpers.get_value_for_org(
+        course_key.org,
+        "additional_student_profile_attributes",
+        default=[]
+    )
 
 
 def get_available_features(course_key):
