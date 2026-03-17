@@ -1561,27 +1561,27 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
             query_features.append('cohort')
             query_features_names['cohort'] = _('Cohort')
 
-            if course.teams_enabled:
-                query_features.append('team')
-                query_features_names['team'] = _('Team')
+        if course.teams_enabled:
+            query_features.append('team')
+            query_features_names['team'] = _('Team')
 
-            # For compatibility reasons, city and country should always appear last.
-            query_features.append('city')
-            query_features_names['city'] = _('City')
-            query_features.append('country')
-            query_features_names['country'] = _('Country')
+        # For compatibility reasons, city and country should always appear last.
+        query_features.append('city')
+        query_features_names['city'] = _('City')
+        query_features.append('country')
+        query_features_names['country'] = _('Country')
 
-            if not csv:
-                student_data = instructor_analytics_basic.enrolled_students_features(course_key, query_features)
-                response_payload = {
-                    'course_id': str(course_key),
-                    'students': student_data,
-                    'students_count': len(student_data),
-                    'queried_features': query_features,
-                    'feature_names': query_features_names,
-                    'available_features': available_features,
-                }
-                return JsonResponse(response_payload)
+        if not csv:
+            student_data = instructor_analytics_basic.enrolled_students_features(course_key, query_features)
+            response_payload = {
+                'course_id': str(course_key),
+                'students': student_data,
+                'students_count': len(student_data),
+                'queried_features': query_features,
+                'feature_names': query_features_names,
+                'available_features': available_features,
+            }
+            return JsonResponse(response_payload)
 
         else:
             try:
