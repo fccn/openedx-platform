@@ -23,6 +23,7 @@ from common.djangoapps.course_modes.models import CourseMode
 from common.djangoapps.student.models import CourseEnrollment
 from common.djangoapps.student.roles import BulkRoleCache
 from lms.djangoapps.certificates import api as certs_api
+from lms.djangoapps.certificates.api import get_certificates_for_course_and_users
 from lms.djangoapps.course_blocks.api import get_course_block_access_transformers, get_course_blocks
 from lms.djangoapps.course_blocks.transformers import library_content
 from lms.djangoapps.courseware.user_state_client import DjangoXBlockUserStateClient
@@ -244,7 +245,7 @@ class _CertificateBulkContext:
         self.certificates_by_user = {
             certificate.user.id: certificate
             for certificate in
-            GeneratedCertificate.objects.filter(course_id=context.course_id, user__in=users)
+            get_certificates_for_course_and_users(course_id=context.course_id, users=users)
         }
 
 

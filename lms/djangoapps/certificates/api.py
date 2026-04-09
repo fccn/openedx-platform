@@ -933,6 +933,20 @@ def invalidate_certificate(user_id, course_key_or_id, source):
     return True
 
 
+def get_certificates_for_course_and_users(course_id, users):
+    """
+    Retrieves all GeneratedCertificate records for a specific course and a list of users.
+
+    Args:
+        course_id (CourseKey): The unique identifier for the course run.
+        users (Iterable[User]): A list or queryset of User instances to filter certificates by.
+
+    Returns:
+        QuerySet[GeneratedCertificate]: A queryset containing the matching certificate records.
+    """
+    return GeneratedCertificate.objects.filter(course_id=course_id, user__in=users)
+
+
 def clear_pii_from_certificate_records_for_user(user):
     """
     Utility function to remove PII from certificate records when a learner's account is being retired. Used by the
