@@ -1497,6 +1497,10 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
             course_key.org,
             "additional_student_profile_attributes"
         )
+        if not additional_attributes:
+            additional_attributes = configuration_helpers.get_value(
+                "additional_student_profile_attributes", []
+            )
         if additional_attributes:
             # Fail fast: must be list/tuple of strings.
             if not isinstance(additional_attributes, (list, tuple)):
@@ -1521,7 +1525,7 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
                         attrs=', '.join(invalid)
                     )
                 )
-            query_features.extend(additional_attributes)
+            query_features.extend([a for a in additional_attributes if a not in query_features])
 
         # Provide human-friendly and translatable names for these features. These names
         # will be displayed in the table generated in data_download.js. It is not (yet)
@@ -1552,7 +1556,7 @@ class GetStudentsFeatures(DeveloperErrorViewMixin, APIView):
                     # pylint: disable-next=translation-of-non-string
                     query_features_names[attr] = _(formatted_name)
 
-        for field in settings.PROFILE_INFORMATION_REPORT_PRIVATE_FIELDS:
+        for field in getattr(settings, 'PROFILE_INFORMATION_REPORT_PRIVATE_FIELDS', []):
             keep_field_private(query_features, field)
             query_features_names.pop(field, None)
 
