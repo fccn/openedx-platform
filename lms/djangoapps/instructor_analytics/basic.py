@@ -146,6 +146,11 @@ def get_student_features_with_custom(course_key):
         "additional_student_profile_attributes"
     )
 
+    if not additional_attributes:
+        additional_attributes = configuration_helpers.get_value(
+            "additional_student_profile_attributes", []
+        )
+
     if additional_attributes:
         return STUDENT_FEATURES + tuple(additional_attributes)
 
