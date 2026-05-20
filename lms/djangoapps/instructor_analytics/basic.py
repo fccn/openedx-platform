@@ -301,7 +301,7 @@ def enrolled_students_features(course_key, features):
 
     students = [enrollment.user for enrollment in enrollments]
 
-    student_features = [x for x in get_student_features_with_custom(course_key) if x in features]
+    student_features = [x for x in features if x not in set(PROFILE_FEATURES) and 'meta.' not in x]
     profile_features = [x for x in PROFILE_FEATURES if x in features]
 
     if 'external_user_key' in features and len(students) > 0:
