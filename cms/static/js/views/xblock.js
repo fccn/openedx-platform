@@ -58,7 +58,7 @@ function($, _, ViewUtils, BaseView, XBlock, HtmlUtils) {
                 aside;
 
             fragmentsRendered = this.renderXBlockFragment(fragment, wrapper);
-            fragmentsRendered.always(function() {
+            fragmentsRendered.done(function() {
                 xblockElement = self.$('.xblock').first();
                 try {
                     xblock = XBlock.initializeBlock(xblockElement);
@@ -180,19 +180,31 @@ function($, _, ViewUtils, BaseView, XBlock, HtmlUtils) {
             var self = this,
                 applyResource,
                 numResources,
-                deferred;
+                deferred,
+                failedJs = false;
             numResources = resources.length;
             deferred = $.Deferred();
             applyResource = function(index) {
                 var hash, resource, value, promise;
                 if (index >= numResources) {
-                    deferred.resolve();
+                    deferred.resolve({
+                        failedJs: failedJs
+                    });
                     return;
                 }
                 value = resources[index];
                 hash = value[0];
                 if (!window.loadedXBlockResources) {
                     window.loadedXBlockResources = [];
+                }
+                if (!window.failedXBlockResources) {
+                    window.failedXBlockResources = [];
+                }
+                // Previously failed JS resource (e.g. blocked by extension): skip it but continue loading.
+                if (_.indexOf(window.failedXBlockResources, hash) >= 0) {
+                    failedJs = true;
+                    applyResource(index + 1);
+                    return;
                 }
                 if (_.indexOf(window.loadedXBlockResources, hash) < 0) {
                     resource = value[1];
@@ -201,7 +213,19 @@ function($, _, ViewUtils, BaseView, XBlock, HtmlUtils) {
                     promise.done(function() {
                         applyResource(index + 1);
                     }).fail(function() {
-                        deferred.reject();
+                        console.warn(
+                            'Failed to load XBlock resource:',
+                            resource.data || resource.kind
+                        );
+
+                        if (resource.mimetype === 'application/javascript') {
+                            failedJs = true;
+
+                            // Cache so subsequent fragments skip it without retrying.
+                            window.failedXBlockResources.push(hash);
+                        }
+
+                        applyResource(index + 1);
                     });
                 } else {
                     applyResource(index + 1);
@@ -232,10 +256,25 @@ function($, _, ViewUtils, BaseView, XBlock, HtmlUtils) {
                 }
             } else if (mimetype === 'application/javascript') {
                 if (kind === 'text') {
-                    // xss-lint: disable=javascript-jquery-append,javascript-concat-html
-                    $head.append('<script>' + data + '</script>');
+                    // Unset define.amd temporarily so UMD bundles take the global path, not AMD (see fccn/nau-tutor-configs#287).
+                    var savedAmd = window.define && window.define.amd;
+                    try {
+                        if (window.define) { window.define.amd = undefined; }
+                        // xss-lint: disable=javascript-jquery-append,javascript-concat-html
+                        $head.append('<script>' + data + '</script>');
+                    } finally {
+                        if (window.define) { window.define.amd = savedAmd; }
+                    }
                 } else if (kind === 'url') {
-                    return ViewUtils.loadJavaScript(data);
+                    // Raw <script> so onerror fires on block — ViewUtils.loadJavaScript fires on both load and error.
+                    var scriptDeferred = $.Deferred();
+                    var scriptEl = document.createElement('script');
+                    scriptEl.type = 'text/javascript';
+                    scriptEl.src = data;
+                    scriptEl.onload = function() { scriptDeferred.resolve(); };
+                    scriptEl.onerror = function() { scriptDeferred.reject(); };
+                    $head[0].appendChild(scriptEl);
+                    return scriptDeferred.promise();
                 }
             } else if (mimetype === 'text/html') {
                 if (placement === 'head') {
