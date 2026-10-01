@@ -658,7 +658,7 @@ such that the value can be defined later than this assignment (file load order).
         batchEnrollment.prototype.display_response = function(dataFromServer) {
             var allowed, autoenrolled, enrolled, errors, errorsLabel,
                 invalidIdentifier, notenrolled, notunenrolled, renderList, sr, studentResults,
-                i, j, len, len1, ref, renderIdsLists,
+                i, len, ref, renderIdsLists,
                 displayResponse = this;
             this.clear_input();
             this.$task_response.empty();
@@ -755,14 +755,18 @@ such that the value can be defined later than this assignment (file load order).
                         results = [];
                     for (k = 0, len = errs.length; k < len; k++) {
                         srItem = errs[k];
-                        results.push(srItem.identifier);
+                        // Surface the specific reason (e.g. a blocked NIF-required
+                        // enrollment) when the backend provides one, instead of
+                        // only showing the identifier with no explanation.
+                        results.push(
+                            srItem.error_message
+                                ? srItem.identifier + ': ' + srItem.error_message
+                                : srItem.identifier
+                        );
                     }
                     return results;
                 };
-                for (j = 0, len1 = errors.length; j < len1; j++) {
-                    studentResults = errors[j];
-                    renderList(errorsLabel, renderIdsLists(errors));
-                }
+                renderList(errorsLabel, renderIdsLists(errors));
             }
             if (enrolled.length && emailStudents) {
                 renderList(gettext('Successfully enrolled and sent email to the following users:'), (function() {
