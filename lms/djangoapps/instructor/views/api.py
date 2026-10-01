@@ -67,6 +67,7 @@ from common.djangoapps.student.models import (
     get_user_by_username_or_email,
     is_email_retired,
 )
+from common.djangoapps.student.models.course_enrollment import EnrollmentNotAllowed
 from common.djangoapps.student.roles import CourseFinanceAdminRole, CourseSalesAdminRole
 from common.djangoapps.util.file import (
     FileValidationException,
@@ -836,6 +837,16 @@ def students_update_enrollment(request, course_id):  # lint-amnesty, pylint: dis
             # validity (obviously, cannot check if email actually /exists/,
             # simply that it is plausibly valid)
             validate_email(email)  # Raises ValidationError if invalid
+        except ValidationError:
+            # Flag this email as an error if invalid, but continue checking
+            # the remaining in the list
+            results.append({
+                'identifier': identifier,
+                'invalidIdentifier': True,
+            })
+            continue
+
+        try:
             if action == 'enroll':
                 before, after, enrollment_obj = enroll_email(
                     course_id, email, auto_enroll, email_students, {**email_params}, language=language
@@ -880,12 +891,25 @@ def students_update_enrollment(request, course_id):  # lint-amnesty, pylint: dis
                     f"Unrecognized action '{action}'"
                 ))
 
-        except ValidationError:
-            # Flag this email as an error if invalid, but continue checking
-            # the remaining in the list
+        except EnrollmentNotAllowed as exc:
+            # Enrollment was blocked by a pipeline filter (e.g. NIF requirement).
+            # Surface the specific message so the instructor knows the reason.
+            log.warning("Enrollment not allowed for %s: %s", identifier, exc)
             results.append({
                 'identifier': identifier,
-                'invalidIdentifier': True,
+                'error': True,
+                'error_message': str(exc),
+            })
+
+        except ValidationError as exc:
+            # ValidationError raised during enrollment (e.g. pre_save guard blocking
+            # CourseEnrollmentAllowed creation for a NIF-required course).
+            # Surface the specific message so the instructor knows the reason.
+            log.warning("ValidationError while enrolling %s: %s", identifier, exc)
+            results.append({
+                'identifier': identifier,
+                'error': True,
+                'error_message': exc.messages[0] if exc.messages else str(exc),
             })
 
         except Exception as exc:  # pylint: disable=broad-except
