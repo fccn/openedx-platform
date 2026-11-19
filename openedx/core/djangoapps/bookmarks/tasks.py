@@ -113,13 +113,16 @@ def _update_xblocks_cache(course_key):
     """
     from .models import XBlockCache
     blocks_data = _calculate_course_xblocks_data(course_key)
+    # Display names come from course content and can exceed the column; saving one would fail the whole update.
+    display_name_max_length = XBlockCache._meta.get_field('display_name').max_length
 
     def update_block_cache_if_needed(block_cache, block_data):
         """ Compare block_cache object with data and update if there are differences. """
+        display_name = block_data['display_name'][:display_name_max_length]
         paths = _paths_from_data(block_data['paths'])
-        if block_cache.display_name != block_data['display_name'] or not paths_equal(block_cache.paths, paths):
+        if block_cache.display_name != display_name or not paths_equal(block_cache.paths, paths):
             log.info('Updating XBlockCache with usage_key: %s', str(block_cache.usage_key))
-            block_cache.display_name = block_data['display_name']
+            block_cache.display_name = display_name
             block_cache.paths = paths
             block_cache.save()
 
@@ -136,7 +139,7 @@ def _update_xblocks_cache(course_key):
             log.info('Creating XBlockCache with usage_key: %s', str(block_data['usage_key']))
             block_cache, created = XBlockCache.objects.get_or_create(usage_key=block_data['usage_key'], defaults={
                 'course_key': course_key,
-                'display_name': block_data['display_name'],
+                'display_name': block_data['display_name'][:display_name_max_length],
                 'paths': paths,
             })
 
