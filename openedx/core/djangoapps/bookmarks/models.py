@@ -246,6 +246,8 @@ class XBlockCache(TimeStampedModel):
         usage_key = usage_key.replace(course_key=modulestore().fill_in_run(usage_key.course_key))
 
         data['course_key'] = usage_key.course_key
+        if data.get('display_name'):
+            data['display_name'] = data['display_name'][:cls._meta.get_field('display_name').max_length]
         xblock_cache, created = cls.objects.get_or_create(usage_key=usage_key, defaults=data)
 
         if not created:

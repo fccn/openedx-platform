@@ -189,3 +189,17 @@ class XBlockCacheTaskTests(BookmarksTestsBase):
                 for path_item_index, path_item in enumerate(path):
                     assert path_item.usage_key == \
                            self.course_expected_cache_data[usage_key][path_index][(path_item_index + 1)]
+
+    def test_update_xblocks_cache_with_long_display_name(self):
+        """
+        A display name longer than the display_name column is stored cut to the column's length, and the next
+        update leaves it as it is.
+        """
+        max_length = XBlockCache._meta.get_field('display_name').max_length
+        block = BlockFactory.create(parent=self.sequential_2, category='vertical', display_name='V' * (max_length + 10))
+
+        _update_xblocks_cache(self.course.id)
+        assert XBlockCache.objects.get(usage_key=block.location).display_name == 'V' * max_length
+
+        with self.assertNumQueries(3):
+            _update_xblocks_cache(self.course.id)

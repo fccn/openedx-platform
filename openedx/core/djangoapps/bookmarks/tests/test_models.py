@@ -494,3 +494,17 @@ class XBlockCacheModelTest(ModuleStoreTestCase):
         xblock_cache = XBlockCache.objects.get(id=xblock_cache.id)
         assert xblock_cache._paths == updated_paths  # pylint: disable=protected-access
         assert xblock_cache.paths == [parse_path_data(path) for path in updated_paths]
+
+    def test_create_with_long_display_name(self):
+        """
+        XBlockCache.create() stores a display name longer than the display_name column cut to the column's length,
+        and creating it again with the same name leaves it as it is.
+        """
+        max_length = XBlockCache._meta.get_field('display_name').max_length
+        data = {'usage_key': self.VERTICAL1_USAGE_KEY, 'display_name': 'V' * (max_length + 10)}
+
+        xblock_cache = XBlockCache.create(data)
+        assert XBlockCache.objects.get(id=xblock_cache.id).display_name == 'V' * max_length
+
+        with self.assertNumQueries(1):
+            assert XBlockCache.create(data) == xblock_cache
