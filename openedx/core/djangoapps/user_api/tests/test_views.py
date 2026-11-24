@@ -1,7 +1,10 @@
 """Tests for the user API at the HTTP request level. """
 
+from unittest import mock
+
 import pytest
 import ddt
+from django.conf import settings
 from django.contrib import messages as django_messages
 from django.contrib.messages.storage.session import SessionStorage
 from django.http import HttpResponse
@@ -210,6 +213,122 @@ class ThirdPartyAuthErrorMessageViewTests(ApiTestCase):
 
         assert first_response.json() == {'user_message': 'First error'}
         assert second_response.json() == {'user_message': 'Second error'}
+
+
+@ddt.ddt
+@skip_unless_lms
+class ThirdPartyAuthErrorMessageProviderNameTests(ApiTestCase):
+    """
+    NAU: tests that the third party auth error message is translated and, for an account already linked to another
+    user, names the provider that ExceptionMiddleware saved in the session.
+    """
+
+    URL = '/api/user/v1/accounts/third_party_auth_error/'
+    TEST_PASSWORD = 'Password1234'
+    ALREADY_IN_USE = 'This account is already in use.'
+
+    def setUp(self):
+        super().setUp()
+        # pylint: disable=import-outside-toplevel
+        from config_models.models import cache as config_cache
+        from django.contrib.sites.models import Site
+
+        from common.djangoapps.third_party_auth.models import (
+            OAuth2ProviderConfig,
+            SAMLConfiguration,
+            SAMLProviderConfig,
+        )
+
+        config_cache.clear()
+        self.addCleanup(config_cache.clear)
+        site = Site.objects.get_current()
+        SAMLConfiguration(enabled=True, site=site).save()
+        SAMLProviderConfig(
+            enabled=True, slug='cccmd', name='Cartão de Cidadão', entity_id='https://cccmd', site=site
+        ).save()
+        SAMLProviderConfig(enabled=True, slug='rctsaai', name='RCTSaai', entity_id='https://rctsaai', site=site).save()
+        OAuth2ProviderConfig(
+            enabled=True, slug='google-oauth2', backend_name='google-oauth2', name='Google', site=site
+        ).save()
+
+        self.user = UserFactory.create(password=self.TEST_PASSWORD)
+        self.client.login(username=self.user.username, password=self.TEST_PASSWORD)
+
+    def _queue_error(self, text, duplicate_provider_id=None):
+        """Leave in the session what ExceptionMiddleware leaves after a third party auth error."""
+        from common.djangoapps.third_party_auth.middleware import (  # pylint: disable=import-outside-toplevel
+            DUPLICATE_PROVIDER_ID_SESSION_KEY,
+        )
+
+        session = self.client.session
+        if text is not None:
+            request = RequestFactory().get('/')
+            request.session = session
+            storage = SessionStorage(request)
+            storage.add(django_messages.constants.ERROR, text, extra_tags='social-auth tpa-saml')
+            storage.update(HttpResponse())
+        if duplicate_provider_id:
+            session[DUPLICATE_PROVIDER_ID_SESSION_KEY] = duplicate_provider_id
+        session.save()
+
+    def _expected_duplicate_message(self, provider_name):
+        return (
+            f'The {provider_name} account you selected is already linked to another '
+            f'{settings.PLATFORM_NAME} account.'
+        )
+
+    @ddt.data(
+        ('saml-cccmd', 'Cartão de Cidadão'),
+        ('saml-rctsaai', 'RCTSaai'),
+        ('oa2-google-oauth2', 'Google'),
+    )
+    @ddt.unpack
+    def test_already_linked_account_names_the_provider(self, provider_id, provider_name):
+        self._queue_error(self.ALREADY_IN_USE, duplicate_provider_id=provider_id)
+
+        response = self.client.get(self.URL)
+
+        assert response.json() == {'user_message': self._expected_duplicate_message(provider_name)}
+
+    def test_already_linked_account_without_a_saved_provider(self):
+        self._queue_error(self.ALREADY_IN_USE)
+
+        assert self.client.get(self.URL).json() == {'user_message': self.ALREADY_IN_USE}
+
+    def test_already_linked_account_with_a_disabled_provider(self):
+        self._queue_error(self.ALREADY_IN_USE, duplicate_provider_id='saml-unknown')
+
+        assert self.client.get(self.URL).json() == {'user_message': self.ALREADY_IN_USE}
+
+    def test_saved_provider_is_not_used_for_other_errors(self):
+        self._queue_error("Your credentials aren't allowed", duplicate_provider_id='saml-cccmd')
+
+        assert self.client.get(self.URL).json() == {'user_message': "Your credentials aren't allowed"}
+
+    def test_saved_provider_is_removed_on_read(self):
+        from common.djangoapps.third_party_auth.middleware import (  # pylint: disable=import-outside-toplevel
+            DUPLICATE_PROVIDER_ID_SESSION_KEY,
+        )
+        self._queue_error(None, duplicate_provider_id='saml-cccmd')
+
+        assert self.client.get(self.URL).json() == {'user_message': None}
+        assert DUPLICATE_PROVIDER_ID_SESSION_KEY not in self.client.session
+
+    def test_message_is_translated(self):
+        self._queue_error("Your credentials aren't allowed")
+
+        with mock.patch('openedx.core.djangoapps.user_api.views._', side_effect=lambda text: f'[pt] {text}'):
+            response = self.client.get(self.URL)
+
+        assert response.json() == {'user_message': "[pt] Your credentials aren't allowed"}
+
+    def test_duplicate_message_is_translated(self):
+        self._queue_error(self.ALREADY_IN_USE, duplicate_provider_id='saml-cccmd')
+
+        with mock.patch('openedx.core.djangoapps.user_api.views._', side_effect=lambda text: f'[pt] {text}'):
+            response = self.client.get(self.URL)
+
+        assert response.json() == {'user_message': f"[pt] {self._expected_duplicate_message('Cartão de Cidadão')}"}
 
 
 class UserApiTestCase(UserAPITestCase):

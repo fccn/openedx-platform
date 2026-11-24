@@ -1,9 +1,11 @@
 """HTTP end-points for the User API. """
 
+from django.conf import settings
 from django.contrib import messages as django_messages
 from django.contrib.auth.models import User  # lint-amnesty, pylint: disable=imported-auth-user
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
@@ -17,8 +19,10 @@ from rest_framework.exceptions import ParseError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from social_core.exceptions import AuthAlreadyAssociated
 
 from openedx.core.djangoapps.django_comment_common.models import Role
+from openedx.core.djangoapps.site_configuration import helpers as configuration_helpers
 from openedx.core.djangoapps.user_api.models import UserPreference
 from openedx.core.djangoapps.user_api.preferences.api import get_country_time_zones, update_email_opt_in
 from openedx.core.djangoapps.user_api.serializers import (
@@ -214,6 +218,13 @@ class ThirdPartyAuthErrorMessageView(APIView):
         Returns the pending third-party-auth error message for the current
         user, consuming it (it will not be returned again on the next call).
         """
+        # pylint: disable=import-outside-toplevel
+        # Imported here because third_party_auth is only installed in the LMS, and this module is also loaded in Studio.
+        from common.djangoapps.third_party_auth.middleware import DUPLICATE_PROVIDER_ID_SESSION_KEY
+
+        # NAU: always removed, so a provider saved for an error that another page consumed is never used later.
+        duplicate_provider_id = request.session.pop(DUPLICATE_PROVIDER_ID_SESSION_KEY, None)
+
         user_message = None
         other_messages = []
         # Iterating the storage at all marks it fully read, so any messages
@@ -223,9 +234,32 @@ class ThirdPartyAuthErrorMessageView(APIView):
         # session).
         for message in django_messages.get_messages(request):
             if user_message is None and "social-auth" in (message.extra_tags or "").split():
-                user_message = str(message)
+                user_message = self._get_user_message(str(message), duplicate_provider_id)
             else:
                 other_messages.append(message)
         for message in other_messages:
             django_messages.add_message(request, message.level, message.message, extra_tags=message.extra_tags)
         return Response({"user_message": user_message})
+
+    @staticmethod
+    def _get_user_message(message, duplicate_provider_id):
+        """
+        NAU: returns the message translated to the user's language and, for an account already linked to another user,
+        naming the provider.
+
+        The social_core messages are not translated by social_core: they are translated here when the theme has a
+        translation for them, as openedx.core.djangoapps.user_authn.views.utils does for the login and registration
+        pages. A message with variable details (e.g. "Authentication failed: ...") is returned as it is.
+        """
+        from common.djangoapps.third_party_auth import provider  # pylint: disable=import-outside-toplevel
+
+        if duplicate_provider_id and message == str(AuthAlreadyAssociated(None)):
+            duplicate_provider = provider.Registry.get(duplicate_provider_id)
+            if duplicate_provider:
+                return _(
+                    "The {provider_name} account you selected is already linked to another {platform_name} account."
+                ).format(
+                    provider_name=duplicate_provider.name,
+                    platform_name=configuration_helpers.get_value('PLATFORM_NAME', settings.PLATFORM_NAME),
+                )
+        return _(message)  # pylint: disable=translation-of-non-string
